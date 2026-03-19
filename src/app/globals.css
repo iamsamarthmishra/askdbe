@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@theme {
+  --color-background: #0A0A0A;
+  --color-surface: #111111;
+  --color-border: #1F1F1F;
+  --color-accent: #00FF94;
+  --color-accent-hover: #00DB80;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A1A1A1;
+  --color-border-hover: #333333;
+
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text-primary);
+
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text-primary);
+
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: #000000;
+
+  --color-secondary: var(--color-surface);
+  --color-secondary-foreground: var(--color-text-primary);
+
+  --color-muted: #1F1F1F;
+  --color-muted-foreground: var(--color-text-secondary);
+
+  --color-accent-muted: rgba(0, 255, 148, 0.1);
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  --font-sans: var(--font-inter);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #000;
+}
+
+.glass-panel {
+  background: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+}
