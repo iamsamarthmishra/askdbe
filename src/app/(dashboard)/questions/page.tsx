@@ -17,108 +17,30 @@ const CATEGORIES = [
   "Case Study"
 ];
 
-const QUESTIONS_DATA = [
-  // DSA Questions
-  {
-    id: "dsa1",
-    category: "DSA",
-    title: "Implement LRU Cache",
-    company: "Amazon",
-    difficulty: "Hard",
-    description: "Design and implement a data structure for Least Recently Used (LRU) cache.",
-    solution: "Use a hash map combined with a doubly linked list. The map provides O(1) access to nodes, while the list maintains the eviction order.",
-  },
-  {
-    id: "dsa2",
-    category: "DSA",
-    title: "Merge Intervals",
-    company: "Google",
-    difficulty: "Medium",
-    description: "Given an array of intervals, merge all overlapping intervals.",
-    solution: "Sort the intervals by their start time. Iterate through, merging if the current interval's start is <= the previous interval's end.",
-  },
-  // Technical Questions
-  {
-    id: "tech1",
-    category: "Technical",
-    title: "SQL vs NoSQL Databases",
-    company: "Netflix",
-    difficulty: "Medium",
-    description: "Explain the main differences between SQL and NoSQL databases, and when to choose which.",
-    solution: "SQL is relational, schema-based, and scales vertically (ACID). NoSQL is non-relational, flexible schema, and scales horizontally (BASE). Use SQL for complex queries and ACID transactions. Use NoSQL for rapidly changing data and horizontal scaling.",
-  },
-  {
-    id: "tech2",
-    category: "Technical",
-    title: "What is Event Loop in Node.js?",
-    company: "Stripe",
-    difficulty: "Medium",
-    description: "Describe the Node.js event loop and how it handles asynchronous operations.",
-    solution: "The event loop allows Node.js to perform non-blocking I/O operations by offloading operations to the system kernel whenever possible. It executes callbacks queued across different phases (Timers, Pending Callbacks, Poll, Check, Close).",
-  },
-  // Interview (Behavioral/HR)
-  {
-    id: "int1",
-    category: "Interview",
-    title: "Tell me about a time you failed.",
-    company: "Amazon",
-    difficulty: "Medium",
-    description: "Describe a situation where a project or task failed. How did you handle it and what did you learn?",
-    solution: "Use the STAR approach. Focus strongly on the 'Results' and 'Learnings'. Amazon evaluates the 'Learn and Be Curious' and 'Ownership' leadership principles here. Emphasize how you took accountability without blaming others.",
-  },
-  {
-    id: "int2",
-    category: "Interview",
-    title: "Handling disagreement with a senior.",
-    company: "Meta",
-    difficulty: "Hard",
-    description: "How would you handle a situation where you strongly disagree with a senior engineer or manager's technical decision?",
-    solution: "Discuss 'Disagree and Commit'. State that you would back your claims with data and benchmarks in a respectful 1:1 meeting. If the decision remains unchanged, you commit to executing their plan to the best of your highly capable abilities.",
-  },
-  // Aptitude
-  {
-    id: "apt1",
-    category: "Aptitude",
-    title: "The 3 Jugs Puzzle",
-    company: "Microsoft",
-    difficulty: "Hard",
-    description: "You have a 3-gallon jug and a 5-gallon jug, and an unlimited supply of water. How do you measure exactly 4 gallons?",
-    solution: "1. Fill 5G. 2. Pour 5G into 3G (leaves 2G in 5G). 3. Empty 3G. 4. Pour the 2G from 5G into 3G. 5. Fill 5G again. 6. Pour 5G into 3G until full (takes 1G). 7. Exactly 4G remains in the 5G jug.",
-  },
-  {
-    id: "apt2",
-    category: "Aptitude",
-    title: "Clock Angle Problem",
-    company: "TCS",
-    difficulty: "Easy",
-    description: "What is the angle between the hour and minute hands of a clock at 3:15?",
-    solution: "The minute hand is exactly at 3 (90 degrees). The hour hand moves 360/12 = 30 degrees per hour. In 15 minutes (1/4 of an hour), the hour hand moves 30 * (1/4) = 7.5 degrees past the 3. The angle is 7.5 degrees.",
-  },
-  // Case Study
-  {
-    id: "cs1",
-    category: "Case Study",
-    title: "Design Uber's Dispatch System",
-    company: "Uber",
-    difficulty: "Hard",
-    description: "How would you design a highly scalable location tracking and dispatch system for millions of concurrent drivers and riders?",
-    solution: "Discuss Quadtrees / Geohashes for location indexing (e.g., Redis geospatial features). Riders request rides, system queries nearest drivers within specific geohashes. Use Kafka for pub/sub matching events, and WebSockets for real-time app updates.",
-  },
-  {
-    id: "cs2",
-    category: "Case Study",
-    title: "E-Commerce Flash Sale Architecture",
-    company: "Flipkart",
-    difficulty: "Hard",
-    description: "Design an architecture that can handle a massive spike of 10 million concurrent users buying a limited stock of 1000 phones.",
-    solution: "Use a heavy caching layer (Redis) at the edge. Implement a queuing mechanism (RabbitMQ/Kafka) to serialize checkout requests. Only allow the first 1000 requests into the database transaction layer. Respond to the rest from cache that stock is empty.",
-  }
-];
+import { QUESTIONS_DATA } from "@/lib/questions";
+
+import { createClient } from "@/lib/supabase/client";
 
 export default function QuestionsPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [typingPlaceholder, setTypingPlaceholder] = useState("");
+  const [plan, setPlan] = useState<'free' | 'premium'>('free');
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase.from('profiles').select('plan').eq('id', session.user.id).single();
+        if (data?.plan) setPlan(data.plan as 'free' | 'premium');
+      }
+      setLoading(false);
+    }
+    loadProfile();
+  }, [supabase]);
+
   const placeholders = ["Search 'System Design'...", "Search 'Amazon'...", "Search 'Trees'..."];
 
   useEffect(() => {
@@ -155,9 +77,18 @@ export default function QuestionsPage() {
   }, []);
 
   const [solved, setSolved] = useState<Set<string>>(new Set());
+  const isPremium = plan === 'premium';
+  const limitReached = !isPremium && solved.size >= 5;
 
   const toggleSolved = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Prevent solving new questions if limit reached on free plan
+    if (limitReached && !solved.has(id)) {
+      alert("Free plan limit reached (5 questions/month). Please upgrade to Premium!");
+      return;
+    }
+
     setSolved(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -180,8 +111,20 @@ export default function QuestionsPage() {
       
       {/* Header & Search */}
       <div className="space-y-6">
-        <h1 className="text-4xl font-extrabold tracking-tight text-[#FFFFFF]">Curated Questions</h1>
-        <p className="text-[#A1A1A1]">Master technical rounds, aptitudes, systems design, and behavioral interviews.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-[#FFFFFF]">Curated Questions</h1>
+            <p className="text-[#A1A1A1]">Master technical rounds, aptitudes, systems design, and behavioral interviews.</p>
+          </div>
+          {!loading && (
+            <div className="px-4 py-2 bg-[#111111] rounded-xl border border-[#333333] flex items-center gap-2">
+              <span className="text-sm font-medium text-zinc-400">Monthly Usage:</span>
+              <span className={`text-sm font-bold ${limitReached ? 'text-red-400' : 'text-[#00FF94]'}`}>
+                {solved.size} / {isPremium ? '∞' : '5'} Solved
+              </span>
+            </div>
+          )}
+        </div>
         
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
@@ -289,8 +232,8 @@ export default function QuestionsPage() {
                               {isSolved ? "Mark as Undone" : "Mark as Solved"}
                             </Button>
 
-                            <Button variant="ghost" className="text-[#00FF94] font-semibold hover:bg-[#00FF94]/10 hover:text-[#00FF94]">
-                              Start Timer <ChevronRight className="w-4 h-4 ml-1" />
+                            <Button variant="ghost" className="text-[#00FF94] font-semibold hover:bg-[#00FF94]/10 hover:text-[#00FF94]" onClick={() => window.location.href = `/questions/${q.id}`}>
+                              Start Assessment <ChevronRight className="w-4 h-4 ml-1" />
                             </Button>
                           </div>
                         </div>

@@ -21,9 +21,60 @@ const AI_RECOMMENDATIONS = [
   { id: 4, topic: "Behavioral: Leadership", relevance: "Amazon LP" },
 ];
 
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { load } from "@cashfreepayments/cashfree-js";
+
 export default function DashboardPage() {
+  const [plan, setPlan] = useState<'free' | 'premium'>('free');
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase.from('profiles').select('plan').eq('id', session.user.id).single();
+        if (data?.plan) setPlan(data.plan as 'free' | 'premium');
+      }
+      setLoading(false);
+    }
+    loadProfile();
+  }, [supabase]);
+
+  const isPremium = plan === 'premium';
+
+  const handleUpgrade = async () => {
+    try {
+      const res = await fetch('/api/payments/create-order', { method: 'POST' });
+      const data = await res.json();
+      if (data.payment_session_id) {
+        const cashfree = await load({ mode: data.environment || 'sandbox' });
+        cashfree.checkout({ paymentSessionId: data.payment_session_id });
+      } else {
+        alert("Failed to initiate payment: " + (data.error || "Unknown"));
+      }
+    } catch (err) {
+      alert("Checkout error: Please ensure you are logged in.");
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 h-full w-full max-w-5xl mx-auto px-8 pb-20 pt-16 gap-16">
+      {/* Current Plan Badge */}
+      {!loading && (
+        <div className="absolute top-6 right-8 flex items-center gap-3">
+          <span className="text-sm font-medium text-zinc-400">Current Plan:</span>
+          <Badge variant="outline" className={`px-3 py-1 text-xs uppercase tracking-widest ${isPremium ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 'border-[#00FF94]/50 text-[#00FF94] bg-[#00FF94]/10'}`}>
+            {plan}
+          </Badge>
+          {!isPremium && (
+             <Button variant="outline" size="sm" className="h-7 text-xs border-[#00FF94]/30 text-[#00FF94] hover:bg-[#00FF94] hover:text-black rounded-full" onClick={handleUpgrade}>
+               Upgrade
+             </Button>
+          )}
+        </div>
+      )}
       {/* Hero Section */}
       <motion.section
         className="flex flex-col items-center justify-center text-center space-y-6 pt-10"
@@ -142,7 +193,7 @@ export default function DashboardPage() {
 
         {/* AI Recommendations Column */}
         <motion.section
-          className="space-y-6"
+          className="space-y-6 relative flex flex-col h-full"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
@@ -151,20 +202,36 @@ export default function DashboardPage() {
             <Star className="w-6 h-6 text-[#00FF94]" />
             AI Recommendations
           </h2>
-          <div className="flex flex-col gap-4">
-            {AI_RECOMMENDATIONS.map((rec) => (
-              <Card key={rec.id} className="cursor-pointer group bg-[#111111]/80 hover:bg-[#111111]">
-                <CardHeader className="p-4 flex flex-row items-center gap-4">
-                  <div className="p-2.5 rounded-lg bg-[#00FF94]/10 text-[#00FF94]">
-                    <Briefcase className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-sm">{rec.topic}</CardTitle>
-                    <p className="text-xs text-[#A1A1A1] mt-1">{rec.relevance}</p>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
+          
+          <div className="relative flex-1">
+            {!isPremium && (
+               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0a0a0a]/60 backdrop-blur-[2px] rounded-xl border border-[#333] p-6 text-center">
+                 <div className="w-12 h-12 bg-[#111] rounded-full flex items-center justify-center mb-4 border border-[#00FF94]/30 shadow-[0_0_15px_rgba(0,255,148,0.2)]">
+                    <span className="text-xl">🔒</span>
+                 </div>
+                 <h3 className="font-bold text-white mb-2">Premium Feature</h3>
+                 <p className="text-sm text-zinc-300 mb-6">Upgrade to unlock tailored AI learning paths, Exclusive Workshops, and Doubt Sessions.</p>
+                 <Button className="w-full bg-[#00FF94] text-black hover:bg-white border-0" onClick={handleUpgrade}>
+                   Unlock for ₹2999/yr
+                 </Button>
+               </div>
+            )}
+            
+            <div className={`flex flex-col gap-4 ${!isPremium ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+              {AI_RECOMMENDATIONS.map((rec) => (
+                <Card key={rec.id} className="cursor-pointer group bg-[#111111]/80 hover:bg-[#111111]">
+                  <CardHeader className="p-4 flex flex-row items-center gap-4">
+                    <div className="p-2.5 rounded-lg bg-[#00FF94]/10 text-[#00FF94]">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm">{rec.topic}</CardTitle>
+                      <p className="text-xs text-[#A1A1A1] mt-1">{rec.relevance}</p>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
           </div>
         </motion.section>
       </div>

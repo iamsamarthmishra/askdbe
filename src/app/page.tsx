@@ -146,6 +146,64 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-black mb-4">Simple, transparent pricing.</h2>
+            <p className="text-xl text-gray-500 font-medium">Choose the plan that fits your interview preparation goals.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Tier */}
+            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-black/5 hover:border-gray-300 transition-colors flex flex-col">
+              <h3 className="text-2xl font-bold mb-2">Free</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-black">₹0</span>
+                <span className="text-gray-500 font-medium">/ forever</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1 text-gray-600 font-medium">
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> 5 questions per month</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> 1:1 interaction (1 time/month, 15 min)</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> Resume template</li>
+                <li className="flex items-center gap-3 text-gray-400">✗ No exclusive workshop</li>
+                <li className="flex items-center gap-3 text-gray-400">✗ No doubt session</li>
+                <li className="flex items-center gap-3 text-gray-400">✗ No community support</li>
+              </ul>
+              <Link href="/signup">
+                <Button className="w-full h-12 text-base font-bold bg-gray-100 text-black hover:bg-gray-200 rounded-xl">
+                  Get Started for Free
+                </Button>
+              </Link>
+            </div>
+
+            {/* Premium Tier */}
+            <div className="bg-black text-white p-8 rounded-3xl border border-[#00FF94]/30 shadow-2xl shadow-[#00FF94]/20 relative overflow-hidden flex flex-col transform md:-translate-y-4">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#00FF94] opacity-10 blur-3xl rounded-full" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00FF94] to-transparent" />
+              <h3 className="text-2xl font-bold mb-2 text-[#00FF94]">Premium Student</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-black">₹2999</span>
+                <span className="text-gray-400 font-medium">/ year</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1 text-gray-300 font-medium relative z-10">
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> Unlimited questions for a year</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> 1:1 interaction (3 times a month)</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> Exclusive workshops</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> Doubt sessions</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> Community support</li>
+                <li className="flex items-center gap-3"><span className="text-[#00FF94] font-bold">✓</span> Resume assistance</li>
+              </ul>
+              <Link href="/signup">
+                <Button className="w-full h-12 text-base font-bold bg-[#00FF94] text-black hover:bg-white transition-colors rounded-xl relative z-10 shadow-[0_0_20px_rgba(0,255,148,0.3)]">
+                  Upgrade to Premium
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Outro CTA */}
       <section className="py-32 bg-black text-white relative overflow-hidden flex flex-col items-center text-center px-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#00FF94_0%,transparent_50%)] opacity-10" />

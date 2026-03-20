@@ -28,20 +28,44 @@ const TIME_SLOTS = [
   "09:00 AM", "10:00 AM", "11:30 AM", "01:00 PM", "03:00 PM", "04:30 PM", "06:00 PM"
 ];
 
+import { createClient } from "@/lib/supabase/client";
+import { useEffect } from "react";
+
 export default function SessionsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedMentor, setSelectedMentor] = useState(MENTORS[0]);
   const [isBooked, setIsBooked] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [plan, setPlan] = useState<'free' | 'premium'>('free');
+  const [sessionsBooked, setSessionsBooked] = useState(0); // Mock state for booked sessions
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase.from('profiles').select('plan').eq('id', session.user.id).single();
+        if (data?.plan) setPlan(data.plan as 'free' | 'premium');
+      }
+    }
+    loadProfile();
+  }, [supabase]);
+
+  const isPremium = plan === 'premium';
+  const sessionLimit = isPremium ? 3 : 1;
+  const limitReached = sessionsBooked >= sessionLimit;
 
   // Generate a mock custom calendar week
   const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 14 }).map((_, i) => addDays(startDate, i));
 
   const handleBook = () => {
+    if (limitReached) return;
     setIsBooked(true);
     setTimeout(() => {
+      setSessionsBooked(prev => prev + 1);
       setIsModalOpen(false);
       setIsBooked(false);
       setSelectedSlot(null);
@@ -55,9 +79,17 @@ export default function SessionsPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-[#FFFFFF] mb-2">1:1 Mentorship</h1>
           <p className="text-[#A1A1A1]">Book personalized mock interviews and guidance sessions.</p>
         </div>
-        <div className="flex bg-[#111111] border border-[#1F1F1F] p-1 rounded-xl">
-          <Button variant="ghost" className="bg-[#1F1F1F] text-[#FFFFFF] shadow-sm rounded-lg">Book Session</Button>
-          <Button variant="ghost" className="text-[#A1A1A1]">My History</Button>
+        <div className="flex flex-col md:flex-row items-end gap-4">
+          <div className="px-4 py-2 bg-[#111111] rounded-xl border border-[#333333] flex items-center gap-2">
+             <span className="text-sm font-medium text-zinc-400">Monthly Usage:</span>
+             <span className={`text-sm font-bold ${limitReached ? 'text-red-400' : 'text-[#00FF94]'}`}>
+               {sessionsBooked} / {sessionLimit} Sessions
+             </span>
+          </div>
+          <div className="flex bg-[#111111] border border-[#1F1F1F] p-1 rounded-xl">
+            <Button variant="ghost" className="bg-[#1F1F1F] text-[#FFFFFF] shadow-sm rounded-lg">Book Session</Button>
+            <Button variant="ghost" className="text-[#A1A1A1]">My History</Button>
+          </div>
         </div>
       </div>
 
@@ -157,10 +189,10 @@ export default function SessionsPage() {
                 <Button 
                   size="lg" 
                   variant="premium" 
-                  disabled={!selectedSlot}
+                  disabled={!selectedSlot || limitReached}
                   className="rounded-2xl px-12"
                 >
-                  Verify Booking
+                  {limitReached ? "Monthly Limit Reached" : "Verify Booking"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md border-[#333333] shadow-[0_0_50px_rgba(0,0,0,0.8)]">
