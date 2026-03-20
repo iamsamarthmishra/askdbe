@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createServer } from '@/lib/supabase/server';
 
-export async function POST() {
+export async function POST(req: Request) {
   const supabase = await createServer();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized: Invalid Session" }, { status: 401 });
   }
+
+  const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   const payload = {
     order_amount: 2999,
@@ -18,7 +20,7 @@ export async function POST() {
       customer_phone: "9999999999" // Use a static test phone for sandbox processing
     },
     order_meta: {
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?status=success`
+      return_url: `${origin}/dashboard?status=success`
     }
   };
 
